@@ -1,24 +1,21 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -Iinclude
-
-SRCS = src/main.c src/add.c src/sub.c src/utility/stats.c
-OBJS = build/main.o build/add.o build/sub.o build/utility/stats.o
+CFLAGS = -Wall -Wextra -O2 -Iinclude -MMD -MP
+SRCS = $(shell find src -name "*.c")
+OBJS = $(SRCS:src/%.c=build/%.o)
+DEPS = $(OBJS:.o=.d)
 TARGET = build/project/prog
 .PHONY: all clean
-all: prepare $(TARGET)
-prepare:
-	mkdir -p build/utility build/project
-
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(TARGET)
-build/main.o: src/main.c
-	$(CC) $(CFLAGS) -c src/main.c -o build/main.o
-build/add.o: src/add.c
-	$(CC) $(CFLAGS) -c src/add.c -o build/add.o
-build/sub.o: src/sub.c
-	$(CC) $(CFLAGS) -c src/sub.c -o build/sub.o
-build/utility/stats.o: src/utility/stats.c
-	$(CC) $(CFLAGS) -c src/utility/stats.c -o build/utility/stats.o
+all: $(TARGET)
+$(TARGET): $(OBJS) | build/project
+	$(CC) $(CFLAGS) $(OBJS) -o $@
+build/%.o: src/%.c | build build/utility
+	$(CC) $(CFLAGS) -c $< -o $@
+build:
+	mkdir -p build
+build/utility:
+	mkdir -p build/utility
+build/project:
+	mkdir -p build/project
+-include $(DEPS)
 clean:
 	rm -rf build
-
